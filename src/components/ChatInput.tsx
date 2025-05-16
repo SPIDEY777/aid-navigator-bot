@@ -4,6 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Mic, MicOff } from 'lucide-react';
 
+// Define global speech recognition types
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+  
+  interface SpeechRecognitionEvent {
+    results: {
+      [index: number]: {
+        [index: number]: {
+          transcript: string;
+        }
+      }
+    }
+  }
+}
+
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;

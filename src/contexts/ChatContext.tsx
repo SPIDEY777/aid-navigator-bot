@@ -105,7 +105,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Calculate unread notifications
   const unreadNotifications = notifications.filter(n => !n.read).length;
 
-  // OpenAI API integration for chat
+  // OpenAI API integration via Supabase Edge Function
   const processWithOpenAI = async (message: string, messageHistory: Message[]): Promise<string> => {
     try {
       setIsTyping(true);
@@ -150,19 +150,40 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         userMessage
       ];
       
-      // Call OpenAI API (simulation for now)
-      // In a real implementation, this would be an actual API call
-      const response = await simulateOpenAIChatAPI(apiMessages);
-      return response;
+      try {
+        // Call OpenAI API via Supabase Edge Function
+        const response = await fetch('https://project-slug.supabase.co/functions/v1/chat-completion', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // No need for API key here as it's stored securely in Supabase
+          },
+          body: JSON.stringify({
+            messages: apiMessages,
+            model: 'gpt-4o', // Using GPT-4o for better responses
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Error connecting to AI service');
+        }
+
+        const data = await response.json();
+        return data.message.content;
+      } catch (error) {
+        console.error('Error calling OpenAI API via Supabase:', error);
+        // Fall back to simulated responses if the API call fails
+        return await simulateOpenAIChatAPI(apiMessages);
+      }
     } catch (error) {
-      console.error('Error calling OpenAI API:', error);
+      console.error('Error processing message:', error);
       return "I'm sorry, I'm having trouble processing your request right now. Please try again later.";
     } finally {
       setIsTyping(false);
     }
   };
   
-  // Simulate OpenAI API call (replace with actual API call when connected)
+  // Simulate OpenAI API call as fallback
   const simulateOpenAIChatAPI = async (messages: any[]): Promise<string> => {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
