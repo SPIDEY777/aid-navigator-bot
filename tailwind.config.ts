@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,22 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Custom colors for our scholarship chatbot
+				'edu-blue': {
+					100: '#E8F0FE',
+					200: '#C2D7FE',
+					300: '#8AB4F8',
+					400: '#4285F4', // Main blue
+					500: '#1A73E8',
+					600: '#174EA6',
+				},
+				'edu-yellow': '#FBBC04',
+				'edu-green': '#34A853',
+				'edu-red': '#EA4335',
+			},
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +100,22 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'message-appear': {
+					from: {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					to: {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'message-appear': 'message-appear 0.3s ease-out'
 			}
 		}
 	},
