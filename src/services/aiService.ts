@@ -1,5 +1,11 @@
-
+import OpenAI from 'openai';
 import { Message } from '@/types';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true // Only use this in development
+});
 
 // Simulate OpenAI API call as fallback
 export const simulateOpenAIChatAPI = async (messages: any[]): Promise<string> => {
@@ -48,75 +54,37 @@ export const simulateOpenAIChatAPI = async (messages: any[]): Promise<string> =>
 };
 
 // OpenAI API integration via Supabase Edge Function
-export const processWithOpenAI = async (message: string, messageHistory: Message[]): Promise<string> => {
-  try {    
-    // Prepare conversation history for OpenAI
-    const conversationHistory = messageHistory.map(msg => ({
+export const processWithOpenAI = async (userMessage: string, chatHistory: Message[]): Promise<string> => {
+  try {
+    // Format chat history for OpenAI
+    const messages = chatHistory.map(msg => ({
       role: msg.role,
       content: msg.content
     }));
-    
-    // Add system message to provide context about the app
-    const systemMessage = {
-      role: "system",
-      content: `You are an AI assistant specialized in helping students and parents find and apply for scholarships, 
-      grants, and financial aid programs. You have knowledge about eligibility criteria, application processes,
-      required documents, and deadlines. Your goal is to provide personalized guidance based on the user's profile.
-      
-      Available scholarship information:
-      1. National Scholarship Portal Scholarships - Deadline: June 30, 2025
-         Eligibility: Indian citizen, Enrolled in recognized institution, Family income below 6 lakhs per annum
-         Documents: Aadhaar card, Income certificate, Previous academic records
-      
-      2. Prime Minister's Research Fellowship (PMRF) - Deadline: April 15, 2025
-         Eligibility: Master's degree with 60% marks, Selected through national-level test
-         Documents: Master's degree certificate, Research proposal, Recommendation letters
-      
-      3. Central Sector Scheme of Scholarship - Deadline: July 31, 2025
-         Eligibility: Top 20 percentile in 12th standard, Family income below 4.5 lakhs per annum
-         Documents: 12th marksheet, Income certificate, College/university admission proof`
-    };
-    
-    // Add user's new message
-    const userMessage = {
-      role: "user",
-      content: message
-    };
-    
-    // Combine all messages
-    const apiMessages = [
-      systemMessage,
-      ...conversationHistory,
-      userMessage
-    ];
-    
-    try {
-      // Call OpenAI API via Supabase Edge Function
-      const response = await fetch('https://project-slug.supabase.co/functions/v1/chat-completion', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // No need for API key here as it's stored securely in Supabase
+
+    // Add the new user message
+    messages.push({
+      role: 'user',
+      content: userMessage
+    });
+
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful scholarship assistant. Your role is to help students find and apply for scholarships, grants, and financial aid programs. Provide accurate, relevant information and guidance while maintaining a friendly and professional tone."
         },
-        body: JSON.stringify({
-          messages: apiMessages,
-          model: 'gpt-4o', // Using GPT-4o for better responses
-        }),
-      });
+        ...messages
+      ],
+      temperature: 0.7,
+      max_tokens: 500
+    });
 
-      if (!response.ok) {
-        throw new Error('Error connecting to AI service');
-      }
-
-      const data = await response.json();
-      return data.message.content;
-    } catch (error) {
-      console.error('Error calling OpenAI API via Supabase:', error);
-      // Fall back to simulated responses if the API call fails
-      return await simulateOpenAIChatAPI(apiMessages);
-    }
+    return completion.choices[0].message.content || "I apologize, but I couldn't generate a response at this time.";
   } catch (error) {
-    console.error('Error processing message:', error);
-    return "I'm sorry, I'm having trouble processing your request right now. Please try again later.";
+    console.error('Error processing message with OpenAI:', error);
+    return "I apologize, but I'm having trouble connecting to my services right now. Please try again later.";
   }
 };
