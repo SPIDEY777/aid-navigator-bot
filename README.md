@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+#  AI-CHAT BOT FOR GOVERNMENT SCHEMES AND FINANCIAL AID
 
 ## Project info
 
